@@ -1,0 +1,84 @@
+@startuml
+skinparam linetype ortho
+
+title 【事件派发器】类图
+
+namespace eventdispatch #EEE {
+    class EventDispatcher {
+        --
+        + {static} dispatchEvent(Event event): void
+    }
+    note left of EventDispatcher::dispatchEvent
+        eventListener.supportEvent(event)
+        eventListener.handlerEvent(event)
+    end note
+}
+
+namespace eventdispatch.event #EEE {
+    interface Event {
+        + getName()：String
+    }
+
+    class EventForTest1 {
+        + @Override getName()：String
+    }
+
+    class EventForTest2 {
+        + @Override getName()：String
+    }
+
+    Event <|.. EventForTest1
+    Event <|.. EventForTest2
+
+    eventdispatch.EventDispatcher ..> Event
+}
+
+namespace eventdispatch.source #EEE {
+    interface EventSource {
+        + fireEvent(): Event
+    }
+
+    class EventSourceForTest1 {
+        --
+        + @Override fireEvent(): Event
+    }
+
+    class EventSourceFor2 {
+        --
+        + @Override fireEvent(): Event
+    }
+
+    EventSource <|.. EventSourceForTest1
+    EventSource <|.. EventSourceFor2
+
+    eventdispatch.event.Event <. EventSource
+}
+
+namespace eventdispatch.listener #EEE {
+    interface EventListener {
+        + supportEvent(Event event): boolean
+        + handlerEvent(Event event): boolean
+    }
+
+    class EventListenerForTest {
+        + @Override supportEvent(Event event): boolean
+        + @Override handlerEvent(Event event): boolean
+    }
+
+    class EventListenerManager {
+        - eventListenerList: List<EventListener>
+        --
+        + {static} addEventListener(EventListener eventListener): boolean
+        + {static} removeEventListener(EventListener eventListener): boolean
+        + {static} getEventListenerList(): List<EventListener>
+    }
+
+    EventListener <|. EventListenerForTest
+    EventListener "n" --o "1" EventListenerManager
+
+    eventdispatch.event.Event <... EventListener
+
+   eventdispatch.EventDispatcher ..> EventListenerManager
+}
+
+@enduml

@@ -1,0 +1,59 @@
+@startuml
+skinparam linetype ortho
+
+title 【过滤器链】类图
+
+namespace filterchain #EEE {
+    interface FilterChain {
+        + doFilter(HttpRequest httpRequest): void
+        + addFilter(Filter filter): void
+    }
+
+    class StandardFilterChain {
+        - filterList: List<Filter>
+        - currentIndex: int
+        --
+        + @Override doFilter(HttpRequest httpRequest): void
+        + @Override addFilter(Filter filter): void
+    }
+    note left of StandardFilterChain::doFilter
+        get(currentIndex), doFilter(this)
+    end note
+
+    FilterChain <|.. StandardFilterChain
+}
+
+namespace filterchain.filter #EEE {
+    interface Filter {
+        + doFilter(HttpRequest httpRequest, FilterChain filterChain): void
+    }
+
+    class ForeTest1Value {
+        --
+        + @Override doFilter(HttpRequest httpRequest, FilterChain filterChain): void
+    }
+
+    class ForeTest2Value {
+        --
+        + @Override doFilter(HttpRequest httpRequest, FilterChain filterChain): void
+    }
+
+    Filter <|.. ForeTest1Value
+    Filter <|.. ForeTest2Value
+
+    Filter <.. filterchain.FilterChain
+}
+
+namespace filterchain.request #EEE {
+    interface HttpRequest {
+    }
+
+    class StandardHttpRequest {
+    }
+
+    HttpRequest <|.. StandardHttpRequest
+
+    HttpRequest <.. filterchain.FilterChain
+}
+
+@enduml

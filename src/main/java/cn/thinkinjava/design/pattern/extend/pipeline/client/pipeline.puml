@@ -1,0 +1,69 @@
+@startuml
+skinparam linetype ortho
+
+title 【管道】类图
+
+namespace pipeline #EEE {
+    interface Pipeline {
+        + invoke(PipelineContext context): boolean
+        + addValue(PipelineValue value): boolean
+        + removeValue(PipelineValue value): boolean
+    }
+
+    class StandardPipeline {
+        - valueList: List<PipelineValue>
+        --
+        + @Override invoke(PipelineContext context): boolean
+        + @Override addValue(PipelineValue value): boolean
+        + @Override removeValue(PipelineValue value): boolean
+    }
+    note left of StandardPipeline::invoke
+        for，PipelineValue#execute
+    end note
+
+    Pipeline <|.. StandardPipeline
+}
+
+namespace pipeline.value #EEE {
+    interface PipelineValue {
+        + execute(PipelineContext context): boolean
+    }
+
+    class AbstractPipelineValue {
+        --
+        # abstract doExecute(PipelineContext context): boolean
+        + @Override execute(PipelineContext context): boolean
+    }
+
+    class ForeTest1Value {
+        --
+        + @Override doExecute(PipelineContext context): boolean
+    }
+
+    class ForeTest2Value {
+        --
+        + @Override doExecute(PipelineContext context): boolean
+    }
+
+    PipelineValue <|.. AbstractPipelineValue
+    AbstractPipelineValue <|-- ForeTest1Value
+    AbstractPipelineValue <|-- ForeTest2Value
+
+    pipeline.Pipeline ..> PipelineValue
+    pipeline.Pipeline "n" --o "1" pipeline.StandardPipeline
+}
+
+namespace pipeline.context #EEE {
+    interface PipelineContext {
+    }
+
+    class StandardPipelineContext {
+    }
+
+    PipelineContext <|.. StandardPipelineContext
+    pipeline.context.PipelineContext <.. pipeline.Pipeline
+}
+
+'Pipeline 依赖于 PipelineContext、PipelineValue
+
+@enduml

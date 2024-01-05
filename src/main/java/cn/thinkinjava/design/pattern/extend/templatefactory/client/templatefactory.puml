@@ -1,0 +1,72 @@
+@startuml
+skinparam linetype ortho
+
+title 【模板 + 工厂】类图
+
+namespace template #EEE {
+    class PiiContent {
+    }
+
+    class PiiHandlerRegistry {
+        - piiDomainFieldHandlerMap: Map<String, PiiDomainFieldHandler>
+        --
+        + {static} init(): void
+        + {static} putHandler(String piiDomainFieldName, PiiDomainFieldHandler piiDomainFieldHandler): void
+
+        + {static} handlerRead(T domain, Field domainField, PiiContent piiContent): int
+        + {static} handlerWrite(T domain, Field domainField, PiiContent piiContent): int
+
+        + {static} getPiiDomainFieldHandlerMap(): Map<String, PiiDomainFieldHandler>
+    }
+
+    PiiHandlerRegistry ..> PiiContent
+
+}
+
+namespace template.handler.base #EEE {
+
+    interface PiiDomainFieldHandler {
+        + handlerRead(T domain, Field domainField, PiiContent piiContent): boolean
+        + handlerWrite(T domain, Field domainField, PiiContent piiContent): boolean
+        + isSupport(T domain, Field domainField): boolean
+        + getPiiDomainMeta(): String
+    }
+
+    abstract class PiiDomainFieldHandlerBase {
+        --
+        + @Override handlerRead(T domain, Field domainField, PiiContent piiContent): boolean
+        + @Override handlerWrite(T domain, Field domainField, PiiContent piiContent): boolean
+    }
+
+    PiiDomainFieldHandler <|.. PiiDomainFieldHandlerBase
+}
+
+namespace template.handler #EEE {
+
+    class ForTestSupportFieldHandler {
+        --
+        + @Override isSupport(T domain, Field domainField): boolean
+        + @Override getPiiDomainMeta(): String
+    }
+
+    class ForTestNotSupportFieldHandler {
+        --
+        + @Override isSupport(T domain, Field domainField): boolean
+        + @Override getPiiDomainMeta(): String
+    }
+
+    class PiiDomainFieldHandlerFactory {
+        --
+        + {static} createPiiDomainFieldHandler(): List<PiiDomainFieldHandler>
+    }
+
+    template.handler.base.PiiDomainFieldHandlerBase <|-- ForTestSupportFieldHandler
+    template.handler.base.PiiDomainFieldHandlerBase <|-- ForTestNotSupportFieldHandler
+
+    PiiDomainFieldHandlerFactory - ForTestSupportFieldHandler
+    ForTestNotSupportFieldHandler - PiiDomainFieldHandlerFactory
+
+    PiiDomainFieldHandlerFactory <.. template.PiiHandlerRegistry
+}
+
+@enduml
