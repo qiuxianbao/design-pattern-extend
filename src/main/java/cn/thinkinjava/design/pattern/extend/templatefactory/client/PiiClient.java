@@ -17,6 +17,7 @@ import java.util.Map;
 public class PiiClient {
 
     public static void main(String[] args) {
+        // 通过工厂，把处理器放到Map中
         PiiHandlerRegistry.init();
 
         // 遍历处理器
