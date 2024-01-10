@@ -1,0 +1,97 @@
+@startuml
+skinparam linetype ortho
+
+title 【事件派发模式-netty应用】类图
+
+namespace spring #EEE {
+    interface BeanPostProcessor {
+        + postProcessBeforeInitialization(Object bean, String beanName): Object
+        + postProcessAfterInitialization(Object bean, String beanName): Object
+    }
+}
+
+namespace tcp #EEE {
+    interface TcpDispatch {
+        + service(ChannelHandlerContext ctx, TcpRequest request): void
+        + addMethod(String method, TcpFinder.EntityNode resource): void
+    }
+
+    interface TcpFinder {
+        + lookup(TcpRequest request): EntityNode
+        + addMethod(String method, EntityNode entity): void
+    }
+
+    class EntityNode {
+        + onService(TcpRequest request, TcpResponse response): void
+    }
+
+    EntityNode "1"-"1" TcpFinder
+}
+
+namespace tcp.annotation #EEE {
+    annotation TcpMapping
+}
+
+namespace tcp.impl #EEE {
+
+    class DefaultTcpDispatch {
+        - finder: TcpFinder
+        --
+        + @Override service(ChannelHandlerContext ctx, TcpRequest request): void
+        + @Override addMethod(String method, TcpFinder.EntityNode resource): void
+    }
+
+    note left of DefaultTcpDispatch::service
+         TcpFinder.EntityNode entity=finder.lookup(request)
+         entity.onService(request, response);
+    end note
+
+    class DefaultTcpFinder {
+        - map: Map<String, EntityNode>
+        --
+        + @Override lookup(TcpRequest request): EntityNode
+        + @Override addMethod(String method, EntityNode entity): void
+    }
+    note left of DefaultTcpFinder::lookup
+        map.get(request.getMethod())
+    end note
+
+    note left of DefaultTcpFinder::addMethod
+        map.put(method, entity)
+    end note
+
+    class TcpMappingScan {
+        - tcpDispatch: TcpDispatch
+        --
+        + @Override postProcessBeforeInitialization(Object bean, String beanName): Object
+        + @Override postProcessAfterInitialization(Object bean, String beanName): Object
+    }
+
+    note right of TcpMappingScan::postProcessAfterInitialization
+        ReflectionUtils.doWithMethods(Class<?> clazz, MethodCallback mc, MethodFilter mf)
+            tcpDispatch.addMethod(@TcpMapping)
+    end note
+
+    tcp.TcpFinder <|-- DefaultTcpFinder
+    tcp.TcpDispatch <|-- DefaultTcpDispatch
+    DefaultTcpFinder <. DefaultTcpDispatch
+
+    spring.BeanPostProcessor <|... TcpMappingScan
+    tcp.annotation.TcpMapping <.. TcpMappingScan
+    DefaultTcpDispatch <. TcpMappingScan
+}
+
+namespace tcp.client #EEE {
+    class EventNettyCptsClientTest {
+        + tcpDispatch: TcpDispatch
+        --
+        + channelRead0(ChannelHandlerContext ctx, TcpFrame frame): void
+    }
+    note left of EventNettyCptsClientTest::channelRead0
+        tcpDispatch.service(ctx, (TcpRequest)frame)
+    end note
+
+    tcp.impl.DefaultTcpDispatch <.. EventNettyCptsClientTest
+}
+
+@enduml
